@@ -42,7 +42,6 @@ public class Request {
     }
 
     public void setPath(String path) {
-        if(path.endsWith("/")) path += "index.html";
         this.path = Path.of(path);
     }
 

@@ -20,16 +20,27 @@ public class RequestService {
     public void serve(Socket requestSocket) throws IOException {
         Request request = new Request(requestSocket);
         initializeRequest(request);
-        byte[] resource = findResource(request.getPath());
-        if(resource == null) sendResponse(request, "404 Not Found", null, null);
-        else {
-            sendResponse(request, "200 OK", resource, Files.probeContentType(request.getPath()));
-        }
+        byte[] resource = getResource(request.getPath());
+        if(resource == null) sendResponse(request, "404 Not Found", "404 Not Found".getBytes(), "text/html");
+        else sendResponse(request, "200 OK", resource, Files.probeContentType(request.getPath()));
         request.end();
     }
 
-    private byte[] findResource(Path path) throws IOException {
-        if(Files.exists(path)) return Files.readAllBytes(path);
+    private byte[] getResource(Path path) throws IOException {
+        if(Files.isDirectory(path)){
+            if(Files.exists(Path.of(path+ "\\index.html"))) path = Path.of(path+"\\index.html");
+            else if(Files.exists(Path.of(path + "\\index.php"))) path = Path.of(path+"\\index.php");
+            else return null;
+        }
+        String file;
+        if(Files.exists(path)){
+            if(path.getFileName().toString().contains(".php")){
+                PhpService phpService = new PhpService();
+                file = phpService.runPHP(path.toString());
+                return file.getBytes();
+            }
+            else return Files.readAllBytes(path);
+        }
         else return null;
     }
 
@@ -46,8 +57,9 @@ public class RequestService {
         if (path.contains("?")) {
             String stringParams = path.substring((path.indexOf('?')+1));
             path = path.substring(0, path.indexOf('?'));
-            for(String param : stringParams.split("&"))
+            for(String param : stringParams.split("&")) {
                 params.add(new Param(param.split("=")[0], param.split("=")[1]));
+            }
         }
         request.setParams(params);
         return path;
