@@ -1,12 +1,13 @@
 package simpleHttpServer.service;
 
+import simpleHttpServer.model.Param;
 import simpleHttpServer.model.Request;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RequestService {
@@ -20,8 +21,10 @@ public class RequestService {
         Request request = new Request(requestSocket);
         initializeRequest(request);
         byte[] resource = findResource(request.getPath());
-        if(resource == null) sendResponse(request, "404 Not Found", resource);
-        else sendResponse(request, "200 OK", resource);
+        if(resource == null) sendResponse(request, "404 Not Found", null, null);
+        else {
+            sendResponse(request, "200 OK", resource, Files.probeContentType(request.getPath()));
+        }
         request.end();
     }
 
@@ -34,9 +37,27 @@ public class RequestService {
         List<String> requestContent = request.getInputContent();
         String[] requestLine = requestContent.get(0).split(" ");
         request.setMethod(requestLine[0]);
-        request.setPath(rootDirectoryPath+requestLine[1]);
+        requestLine[1] = excludeParams(request, requestLine[1]);
+        request.setPath(rootDirectoryPath + requestLine[1]);
     }
-    private void sendResponse(Request request, String status, byte[] resource){
-        System.out.println("I will send answer with status: "+status);
+
+    private String excludeParams(Request request, String path){
+        List<Param> params = new ArrayList<>();
+        if (path.contains("?")) {
+            String stringParams = path.substring((path.indexOf('?')+1));
+            path = path.substring(0, path.indexOf('?'));
+            for(String param : stringParams.split("&"))
+                params.add(new Param(param.split("=")[0], param.split("=")[1]));
+        }
+        request.setParams(params);
+        return path;
+    }
+
+    private void sendResponse(Request request, String status, byte[] resource, String resourceType) throws IOException {
+        request.send("HTTP/1.1 \r\n" + status);
+        request.send("ContentType: " + resourceType + "\r\n");
+        request.send("\r\n".getBytes());
+        request.send(resource);
+        request.send("\r\n\r\n".getBytes());
     }
 }

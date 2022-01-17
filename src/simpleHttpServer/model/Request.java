@@ -1,9 +1,6 @@
 package simpleHttpServer.model;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.Socket;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -14,11 +11,13 @@ public class Request {
     private Path path;
     private String method;
     private BufferedReader input;
-    private OutputStreamWriter output;
+    private OutputStream output;
+    private List<Param> params;
 
     public Request(Socket socket) throws IOException {
         input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        output = new OutputStreamWriter(socket.getOutputStream());
+        output = socket.getOutputStream();
+        params = new ArrayList<>();
     }
 
     public List<String> getInputContent() throws IOException {
@@ -30,8 +29,16 @@ public class Request {
         return content;
     }
 
+    public void send(String answer) throws IOException {
+        output.write((answer).getBytes());
+    }
+
+    public void send(byte[] answer) throws IOException {
+        output.write(answer);
+    }
+
     public Path getPath() {
-        return path;
+        return this.path;
     }
 
     public void setPath(String path) {
@@ -40,7 +47,7 @@ public class Request {
     }
 
     public String getMethod() {
-        return method;
+        return this.method;
     }
 
     public void setMethod(String method) {
@@ -48,7 +55,15 @@ public class Request {
     }
 
     public void end() throws IOException {
+        output.flush();;
         input.close();
         output.close();
+    }
+
+    public List<Param> getParams() {
+        return this.params;
+    }
+    public void setParams(List<Param> params){
+        this.params.addAll(params);
     }
 }
