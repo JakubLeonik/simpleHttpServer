@@ -7,6 +7,7 @@ public class Main {
             server.listen();
         } catch (Exception exception) {
             System.out.println("Server exception: "+exception.getMessage());
+            exception.printStackTrace();
         }
     }
 }

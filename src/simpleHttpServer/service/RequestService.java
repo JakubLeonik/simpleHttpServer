@@ -10,20 +10,25 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RequestService {
+public class RequestService implements Runnable{
     private String rootDirectoryPath;
+    Request request;
 
-    public RequestService(String rootDirectoryPath) {
+    public RequestService(String rootDirectoryPath, Socket requestSocket) throws IOException {
         this.rootDirectoryPath = rootDirectoryPath;
+        request = new Request(requestSocket);
     }
 
-    public void serve(Socket requestSocket) throws IOException {
-        Request request = new Request(requestSocket);
-        initializeRequest(request);
-        byte[] resource = getResource(request.getPath());
-        if(resource == null) sendResponse(request, "404 Not Found", "404 Not Found".getBytes(), "text/html");
-        else sendResponse(request, "200 OK", resource, Files.probeContentType(request.getPath()));
-        request.end();
+    public void run() {
+        try {
+            initializeRequest(request);
+            byte[] resource = getResource(request.getPath());
+            if(resource == null) sendResponse(request, "404 Not Found", "404 Not Found".getBytes(), "text/html");
+            else sendResponse(request, "200 OK", resource, Files.probeContentType(request.getPath()));
+            request.end();
+        } catch (IOException e) {
+            System.out.println("Server exception: "+e.getMessage());
+        }
     }
 
     private byte[] getResource(Path path) throws IOException {
