@@ -3,12 +3,19 @@ package simpleHttpServer.service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PhpService {
+    private String phpPath = "C:\\Apps\\php\\php-cgi.exe";
 
-    private String phpPath = "C:\\Apps\\php\\php.exe";
-    public String runPHP(String path) throws IOException {
-        ProcessBuilder processBuilder = new ProcessBuilder(phpPath, path);
+    public String runPHP(String path, List<String> params) throws IOException {
+        List<String> args = new ArrayList<>();
+        args.add(phpPath);
+        args.add("-f");
+        args.add(path);
+        if(params != null) args.addAll(params);
+        ProcessBuilder processBuilder = new ProcessBuilder(args);
         Process process = processBuilder.start();
         BufferedReader processInputStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String line, file = "";

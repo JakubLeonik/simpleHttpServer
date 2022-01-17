@@ -1,6 +1,5 @@
 package simpleHttpServer.service;
 
-import simpleHttpServer.model.Param;
 import simpleHttpServer.model.Request;
 
 import java.io.IOException;
@@ -11,14 +10,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RequestService implements Runnable{
+    //variables
     private String rootDirectoryPath;
     Request request;
 
+    //constructor
     public RequestService(String rootDirectoryPath, Socket requestSocket) throws IOException {
         this.rootDirectoryPath = rootDirectoryPath;
         request = new Request(requestSocket);
     }
 
+    //main thread function
     public void run() {
         try {
             initializeRequest(request);
@@ -41,7 +43,7 @@ public class RequestService implements Runnable{
         if(Files.exists(path)){
             if(path.getFileName().toString().contains(".php")){
                 PhpService phpService = new PhpService();
-                file = phpService.runPHP(path.toString());
+                file = phpService.runPHP(path.toString(), request.getParams());
                 return file.getBytes();
             }
             else return Files.readAllBytes(path);
@@ -58,15 +60,16 @@ public class RequestService implements Runnable{
     }
 
     private String excludeParams(Request request, String path){
-        List<Param> params = new ArrayList<>();
+        List<String> params = new ArrayList<>();
         if (path.contains("?")) {
             String stringParams = path.substring((path.indexOf('?')+1));
             path = path.substring(0, path.indexOf('?'));
             for(String param : stringParams.split("&")) {
-                params.add(new Param(param.split("=")[0], param.split("=")[1]));
+                params.add(param);
             }
+            request.setParams(params);
         }
-        request.setParams(params);
+        else request.setParams(null);
         return path;
     }
 

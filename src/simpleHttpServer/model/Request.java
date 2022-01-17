@@ -12,18 +12,17 @@ public class Request {
     private String method;
     private BufferedReader input;
     private OutputStream output;
-    private List<Param> params;
+    private List<String> params;
 
     public Request(Socket socket) throws IOException {
         input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         output = socket.getOutputStream();
-        params = new ArrayList<>();
     }
 
     public List<String> getInputContent() throws IOException {
         List<String> content = new ArrayList<>();
         String line;
-        while (!(line = input.readLine()).isBlank()){
+        while (!(line = input.readLine()).isEmpty()){
             content.add(line);
         }
         return content;
@@ -59,10 +58,14 @@ public class Request {
         output.close();
     }
 
-    public List<Param> getParams() {
+    public List<String> getParams() {
         return this.params;
     }
-    public void setParams(List<Param> params){
-        this.params.addAll(params);
+    public void setParams(List<String> params){
+        if(params != null){
+            this.params = new ArrayList<>();
+            this.params.addAll(params);
+        }
+        else this.params = null;
     }
 }
